@@ -2,19 +2,20 @@
 #include "camera.h"
 #include "config.h"
 #include "esp_camera.h"
+#include "filesystem.h"
 #include "gemini.h"
+#include "serial.h"
 #include "types.h"
+#include "webserver.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h> // The Library
 #include <LittleFS.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
-#include "filesystem.h"
-#include "webserver.h"
-#include "serial.h"
-// Camera model selection - now defined in platformio.ini build_flags
 
+#define LED_PIN 2
+// Camera model selection - now defined in platformio.ini build_flags
 
 // Global conversation history
 std::vector<Message> conversationHistory;
@@ -22,6 +23,7 @@ String url;
 
 void setup() {
   Serial.begin(115200);
+  pinMode(LED_PIN, OUTPUT);
 
   // Mount LittleFS
   if (!LittleFS.begin(true)) {
@@ -30,54 +32,38 @@ void setup() {
     Serial.println("LittleFS mounted");
   }
 
-    // Initialize camera
+  // Initialize camera
 
-    if (!initCamera()) {
-
-      Serial.println("Camera initialization failed!");
-
-      while (true) {
-
-        delay(1000);
-
-      }
-
+  if (!initCamera()) {
+    Serial.println("Camera initialization failed!");
+    while (true) {
+      delay(1000);
     }
+  }
 
-  
+  // Construct URL with API key
 
-    // Construct URL with API key
+  url = "https://generativelanguage.googleapis.com/v1beta/models/" +
+        String(GEMINI_MODEL) + ":generateContent?key=" + String(GEMINI_API_KEY);
 
-    url = "https://generativelanguage.googleapis.com/v1beta/models/"
+  WiFi.begin(ssid, pass);
 
-          "gemini-2.5-flash:generateContent?key=" +
+  while (WiFi.status() != WL_CONNECTED) {
 
-          String(GEMINI_API_KEY);
+    delay(500);
+  }
 
-  
+  Serial.println("Connected to WiFi");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
 
-    WiFi.begin(ssid, pass);
+  // Start web server
+  setupWebServer();
 
-    while (WiFi.status() != WL_CONNECTED) {
+  // Check for chat messages via serial
+  checkSerialChat();
 
-      delay(500);
-
-    }
-
-    Serial.println("Connected to WiFi");
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
-
-    // Start web server
-    setupWebServer();
-
-    // Check for chat messages via serial
-
-    checkSerialChat();
-
-    delay(100); // Small delay to prevent busy looping
-
-  
+  delay(100); // Small delay to prevent busy looping
 }
 
 void loop() {

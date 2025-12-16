@@ -25,9 +25,9 @@ bool initCamera() {
   config.pixel_format = PIXFORMAT_JPEG;
 
   // Use PSRAM for better image quality - your board has 8MB PSRAM!
-  config.frame_size = FRAMESIZE_VGA;    // 640x480 - much better resolution
-  config.jpeg_quality = 8;              // Better quality (lower = better, range 0-63)
-  config.fb_count = 2;                  // Double buffering for better performance
+  config.frame_size = FRAMESIZE_VGA; // 640x480 - much better resolution
+  config.jpeg_quality = 8; // Better quality (lower = better, range 0-63)
+  config.fb_count = 2;     // Double buffering for better performance
 
   // Use PSRAM for frame buffers (much larger capacity)
   config.fb_location = CAMERA_FB_IN_PSRAM;
@@ -39,52 +39,34 @@ bool initCamera() {
     Serial.println("Trying with smaller frame size...");
 
     // Fallback to smaller resolution if VGA fails
-    config.frame_size = FRAMESIZE_QVGA;  // 320x240 - still much better than QQVGA
+    config.frame_size =
+        FRAMESIZE_QVGA; // 320x240 - still much better than QQVGA
     err = esp_camera_init(&config);
     if (err != ESP_OK) {
       Serial.printf("Camera init failed again with error 0x%x", err);
-      Serial.println("Camera hardware may not be connected or powered properly.");
+      Serial.println(
+          "Camera hardware may not be connected or powered properly.");
       return false;
     }
   }
 
   // Configure sensor settings to fix green tint and improve image quality
   sensor_t *s = esp_camera_sensor_get();
-  if (s != NULL) {
-    // Fix green tint - adjust white balance and color correction
-    s->set_whitebal(s, 1);        // Enable auto white balance
-    s->set_awb_gain(s, 1);        // Enable AWB gain
-    s->set_wb_mode(s, 0);         // Auto white balance mode
 
-    // Color correction settings
-    s->set_saturation(s, 0);      // Normal saturation (range: -2 to 2)
-    s->set_brightness(s, 1);      // Slightly increase brightness (range: -2 to 2)
-    s->set_contrast(s, 1);        // Slightly increase contrast (range: -2 to 2)
-
-    // Exposure and gain control
-    s->set_exposure_ctrl(s, 1);   // Enable auto exposure
-    s->set_aec2(s, 1);           // Enable AEC DSP
-    s->set_ae_level(s, 0);       // Auto exposure level
-    s->set_aec_value(s, 300);    // Exposure value (lower = darker)
-
-    // Additional settings for better image quality
-    s->set_gain_ctrl(s, 1);      // Enable auto gain
-    s->set_agc_gain(s, 0);       // Auto gain ceiling (0 = 2x, 1 = 4x, etc.)
-    s->set_gainceiling(s, (gainceiling_t)0); // Gain ceiling
-
-    // Denoise and other quality settings
-    s->set_denoise(s, 1);        // Enable denoise
-    s->set_quality(s, 8);        // JPEG quality (matches our config)
-
-    Serial.println("Camera sensor configured for optimal image quality");
-  } else {
-    Serial.println("Warning: Could not get camera sensor handle");
-  }
-
+  s->set_vflip(s, 1);      // flip it back
+  s->set_hmirror(s, 1);    // mirror horizontally
+  s->set_brightness(s, 2); // increase brightness
+  s->set_contrast(s, 1);   // increase contrast
+  s->set_saturation(s, -1); // reduce saturation to avoid green tint
+  s->set_whitebal(s, 1);   // enable white balance
+  s->set_awb_gain(s, 1);   // enable AWB gain
+  s->set_wb_mode(s, 0);    // auto white balance
+  s->set_gain_ctrl(s, 1);  // enable gain control
+  s->set_exposure_ctrl(s, 1); // enable exposure control
   return true;
 }
 
-camera_fb_t* capturePhoto() {
+camera_fb_t *capturePhoto() {
   camera_fb_t *fb = esp_camera_fb_get();
   if (!fb) {
     Serial.println("Camera capture failed");
