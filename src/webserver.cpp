@@ -1,8 +1,10 @@
 #include "webserver.h"
 #include "filesystem.h"
+#include "serial.h"
+#include <ArduinoJson.h>
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
-#include <ArduinoJson.h>
+#include <Preferences.h>
 
 AsyncWebServer server(80);
 
@@ -29,7 +31,8 @@ void setupWebServer() {
     while (file) {
       String filename = file.name();
       if (filename.endsWith(".jpg")) {
-        if (!first) json += ",";
+        if (!first)
+          json += ",";
         json += "\"" + filename + "\"";
         first = false;
       }
@@ -48,7 +51,8 @@ void setupWebServer() {
     while (file) {
       String filename = file.name();
       if (filename.endsWith(".md")) {
-        if (!first) json += ",";
+        if (!first)
+          json += ",";
         json += "\"" + filename + "\"";
         first = false;
       }
@@ -64,6 +68,18 @@ void setupWebServer() {
   // Add a simple test endpoint
   server.on("/test", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Web server is running!");
+  });
+
+  server.on("/serial", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String command = "";
+    if (request->hasParam("cmd", true)) {
+      command = request->getParam("cmd", true)->value();
+    }
+    Serial.print("Received Web Command: ");
+    Serial.println(command);
+    // Process command using the unified function
+    checkSerialChat(command);
+    request->send(200, "text/plain", "Command processed");
   });
 
   server.begin();
