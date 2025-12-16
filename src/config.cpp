@@ -1,8 +1,10 @@
 #include "config.h"
 
-// WiFi credentials
-const char *ssid = "2.4Ghz_wifi_ssid(name)";
-const char *pass = "wifi_passwd";
+const char *ssid = "BrokenLeg";
+const char *pass = "greelwala@1912";
 
 // Gemini API key
-const char *GEMINI_API_KEY = "your_gemini_API_KEY_here";
+const char *GEMINI_API_KEY = "AIzaSyDKO-nIV_HXm0U-w7WseGwsH_JvB6iFLLE";
+
+// Time API URL
+const char *URL = "http://worldtimeapi.org/api/timezone/Asia/Kolkata";

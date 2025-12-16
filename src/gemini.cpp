@@ -6,22 +6,16 @@
 #include "config.h"
 #include "types.h"
 
-String url;
+extern String url;
 String uploadedFileUri = ""; // Store the uploaded file URI
+String uploadedFileMimeType = ""; // Store the uploaded file MIME type
 
 void sendChatToGemini() {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected, attempting to reconnect...");
-    WiFi.begin(ssid, pass);
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-    }
-    Serial.println("Reconnected!");
+  if (!ensureWiFiConnected()) {
+    return; // Exit if WiFi is not connected
   }
 
-  if (WiFi.status() == WL_CONNECTED) {
-    WiFiClientSecure client;
+  WiFiClientSecure client;
     client.setInsecure();
     HTTPClient http;
 
@@ -81,15 +75,21 @@ void sendChatToGemini() {
         Serial.print("Gemini: ");
         Serial.println(modelText);
 
-        // Add model response to conversation history
-        Message modelMsg;
-        modelMsg.role = "model";
-        modelMsg.text = modelText;
-        conversationHistory.push_back(modelMsg);
+         // Add model response to conversation history
+         Message modelMsg;
+         modelMsg.role = "model";
+         modelMsg.text = modelText;
+         conversationHistory.push_back(modelMsg);
 
-        Serial.print("Conversation history now has ");
-        Serial.print(conversationHistory.size());
-        Serial.println(" messages.\n");
+         Serial.print("Conversation history now has ");
+         Serial.print(conversationHistory.size());
+         Serial.println(" messages.\n");
+
+         // Save the query and response to filesystem
+         if (conversationHistory.size() >= 2) {
+           String userQuery = conversationHistory[conversationHistory.size() - 2].text;
+           save_history(modelText, userQuery);
+         }
       } else {
         Serial.println("Error parsing Gemini response");
         Serial.println(response);
@@ -101,11 +101,10 @@ void sendChatToGemini() {
     }
 
     http.end();
-  }
 }
 
 bool uploadFileToGemini(uint8_t* fileData, size_t fileSize, String mimeType, String displayName) {
-  if (WiFi.status() != WL_CONNECTED) {
+  if (!ensureWiFiConnected()) {
     Serial.println("WiFi not connected for upload");
     return false;
   }
@@ -206,6 +205,7 @@ bool uploadFileToGemini(uint8_t* fileData, size_t fileSize, String mimeType, Str
   }
 
   uploadedFileUri = fileUri;
+  uploadedFileMimeType = mimeType;
   Serial.println("File uploaded successfully. URI: " + uploadedFileUri);
   return true;
 }

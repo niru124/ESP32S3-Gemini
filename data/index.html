@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 Camera Images</title>
+</head>
+<body>
+    <h1>Taken Pictures</h1>
+    <div id="images"></div>
+
+    <h1>Chat Logs</h1>
+    <div id="files"></div>
+
+    <script>
+        async function loadImages() {
+            const response = await fetch('/api/images');
+            const images = await response.json();
+            const container = document.getElementById('images');
+            container.innerHTML = images.map(img => `<div style="display:inline-block; margin:10px;"><img src="/${img}" style="max-width:300px;" /><br><a href="/${img}" download>Download</a> <button onclick="deleteFile('${img}')">Delete</button></div>`).join('');
+        }
+
+        async function loadFiles() {
+            const response = await fetch('/api/files');
+            const files = await response.json();
+            const container = document.getElementById('files');
+            container.innerHTML = files.map(file => `<a href="/${file}" download>Download ${file}</a> <button onclick="deleteFile('${file}')">Delete</button><br>`).join('');
+        }
+
+        async function deleteFile(filename) {
+            const response = await fetch('/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ filename })
+            });
+            if (response.ok) {
+                loadFiles(); // Refresh the list
+            } else {
+                alert('Delete failed');
+            }
+        }
+
+        loadImages();
+        loadFiles();
+    </script>
+</body>
+</html>
