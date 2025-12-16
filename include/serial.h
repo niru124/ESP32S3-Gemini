@@ -3,6 +3,6 @@
 
 #include <Arduino.h>
 
-void checkSerialChat(String webCommand = "");
+void checkSerialChat();
 
 #endif // SERIAL_H

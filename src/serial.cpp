@@ -135,21 +135,17 @@ void processBuffer(String buf) {
   Serial.println("--- Command processing complete ---\n");
 }
 
-void checkSerialChat(String webCommand) {
+void checkSerialChat() {
   static String serialBuffer = "";
-  if (webCommand != "") { // there is web command
-    processBuffer(webCommand);
-  } else {
-    while (Serial.available()) {
-      char c = Serial.read();
-      if (c == '\n' || c == '\r') {
-        if (serialBuffer.length() > 0) {
-          processBuffer(serialBuffer);
-          serialBuffer = "";
-        }
-      } else {
-        serialBuffer += c;
+  while (Serial.available()) {
+    char c = Serial.read();
+    if (c == '\n' || c == '\r') {
+      if (serialBuffer.length() > 0) {
+        processBuffer(serialBuffer);
+        serialBuffer = "";
       }
+    } else {
+      serialBuffer += c;
     }
   }
 }
