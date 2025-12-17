@@ -70,6 +70,18 @@ void setupWebServer() {
     request->send(200, "text/plain", "Web server is running!");
   });
 
+  server.on("/serial", HTTP_POST, [](AsyncWebServerRequest *request) {
+    String command = "";
+    if (request->hasParam("cmd", true)) {
+      command = request->getParam("cmd", true)->value();
+    }
+    Serial.print("Received Web Command: ");
+    Serial.println(command);
+    // Process command using the unified function
+    checkSerialChat(command);
+    request->send(200, "text/plain", "Command processed");
+  });
+
   server.begin();
   Serial.println("Web server started on port 80");
 }
