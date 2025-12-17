@@ -11,9 +11,6 @@ String uploadedFileUri = ""; // Store the uploaded file URI
 String uploadedFileMimeType = ""; // Store the uploaded file MIME type
 
 void sendChatToGemini() {
-  if (!ensureWiFiConnected()) {
-    return; // Exit if WiFi is not connected
-  }
 
   WiFiClientSecure client;
     client.setInsecure();
@@ -104,10 +101,6 @@ void sendChatToGemini() {
 }
 
 bool uploadFileToGemini(uint8_t* fileData, size_t fileSize, String mimeType, String displayName) {
-  if (!ensureWiFiConnected()) {
-    Serial.println("WiFi not connected for upload");
-    return false;
-  }
 
   WiFiClientSecure client;
   client.setInsecure();

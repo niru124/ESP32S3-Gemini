@@ -17,9 +17,6 @@
 // TODO: make it some reserve as it will make multiple partitions so reserve some and if full reserve another
 extern std::vector<Message> conversationHistory;
 // 'buffer' is extern in serial.h
-extern const char *URL;
-extern const char *ssid;
-extern const char *pass;
 
 #define LED_PIN 2
 

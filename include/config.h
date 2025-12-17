@@ -3,17 +3,13 @@
 
 #include <Arduino.h>
 
-// WiFi credentials
-extern const char *ssid;
-extern const char *pass;
-
 // Gemini API key
-extern const char *GEMINI_API_KEY;
+extern String GEMINI_API_KEY;
 // Gemini Model
-extern const char *GEMINI_MODEL;
+extern String GEMINI_MODEL;
 
 // Time API URL
-extern const char *URL;
+extern String TIME_API_URL;
 extern String url;
 
 // Camera model selection

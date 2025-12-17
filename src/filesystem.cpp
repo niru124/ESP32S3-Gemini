@@ -1,48 +1,19 @@
 #include "filesystem.h"
+#include "config.h"
+#include <ArduinoJson.h>
+#include <HTTPClient.h>
 #include <LittleFS.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
-#include "config.h"
 
 // Extern declarations for global variables
-extern const char* ssid;
-extern const char* pass;
-extern String url;
-
-// Helper function to ensure WiFi connection
-bool ensureWiFiConnected() {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected. Attempting to reconnect...");
-    WiFi.begin(ssid, pass);
-    int retryCount = 0;
-    while (WiFi.status() != WL_CONNECTED && retryCount < 20) { // Retry for 10 seconds
-      delay(500);
-      Serial.print(".");
-      retryCount++;
-    }
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("\nWiFi reconnected!");
-      return true;
-    }
-    else {
-      Serial.println("\nFailed to reconnect to WiFi.");
-      return false;
-    }
-  }
-  return true;
-}
+extern String TIME_API_URL;
 
 String getFileName() {
-  if (!ensureWiFiConnected()) {
-    return "chat_log.md"; // Fallback if WiFi not connected
-  }
-
   WiFiClientSecure client;
   client.setInsecure();
   HTTPClient http;
-  http.begin(URL);
+  http.begin(TIME_API_URL.c_str());
   int httpResponseCode = http.GET();
   int retryCount = 0;
   while (httpResponseCode <= 0 && retryCount < 5) {
@@ -64,14 +35,13 @@ String getFileName() {
     String datetime = doc["datetime"];
     // Parse "2025-12-16T01:43:47.179537+05:30"
     int tIndex = datetime.indexOf('T');
-    String date = datetime.substring(0, tIndex); // "2025-12-16"
+    String date = datetime.substring(0, tIndex);      // "2025-12-16"
     String timeFull = datetime.substring(tIndex + 1); // "01:43:47.179537+05:30"
-    String time = timeFull.substring(0, 5); // "01:43"
+    String time = timeFull.substring(0, 5);           // "01:43"
     String filename = date + "_" + time + ".md";
     filename.replace(":", "-"); // Replace : with - for filename safety
     return filename;
-  }
-  else {
+  } else {
     Serial.println("Failed to get time from API after retries");
     return "chat_log.md"; // Fallback
   }
@@ -91,12 +61,12 @@ void save_history(String res, String user) {
 
   if (!file) {
     Serial.println("Failed to open file for writing");
-  }
-  else {
+  } else {
     file.println(user);
     file.println("---");
     file.println(res);
     file.println("---");
+    Serial.println(" ");
     file.close();
     Serial.println("Write complete.");
   }
@@ -117,5 +87,3 @@ void deleteFile(const char *filename) {
     Serial.println("Failed to delete file: " + String(filename));
   }
 }
-
-
