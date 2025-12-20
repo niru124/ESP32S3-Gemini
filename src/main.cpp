@@ -18,8 +18,10 @@
 #define LED_PIN 2
 // Camera model selection - now defined in platformio.ini build_flags
 
-// Global conversation history
-std::vector<Message> conversationHistory;
+// Global conversation history - circular buffer
+std::array<Message, MAX_HISTORY> conversationHistory;
+int historyHead = 0;
+int historyCount = 0;
 String url;
 
 WiFiManager wm;

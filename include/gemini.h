@@ -10,7 +10,7 @@ extern String uploadedFileMimeType;
 
 bool ensureWiFiConnected();
 void sendChatToGemini();
-bool uploadFileToGemini(uint8_t* fileData, size_t fileSize, String mimeType, String displayName);
+bool uploadFileToGemini(uint8_t* fileData, size_t fileSize, String filename);
 void save_history(String res, String user);
 
 #endif // GEMINI_H

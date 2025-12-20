@@ -14,8 +14,10 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 
-// TODO: make it some reserve as it will make multiple partitions so reserve some and if full reserve another
-extern std::vector<Message> conversationHistory;
+// Conversation history - circular buffer
+extern std::array<Message, MAX_HISTORY> conversationHistory;
+extern int historyHead;
+extern int historyCount;
 // 'buffer' is extern in serial.h
 
 #define LED_PIN 2
@@ -59,12 +61,12 @@ void processBuffer(String buf) {
         imageFile.close();
         Serial.println("Step 6: Image saved successfully");
 
-        Serial.println("Step 7: Uploading image to Gemini...");
-        if (uploadFileToGemini(fb->buf, fb->len, "image/jpeg", imageFilename)) {
-          Serial.println("Step 8: Image uploaded to Gemini successfully");
-        } else {
-          Serial.println("Step 8: Failed to upload image to Gemini");
-        }
+         Serial.println("Step 7: Uploading image to Gemini...");
+         if (uploadFileToGemini(fb->buf, fb->len, imageFilename)) {
+           Serial.println("Step 8: Image uploaded to Gemini successfully");
+         } else {
+           Serial.println("Step 8: Failed to upload image to Gemini");
+         }
       } else {
         Serial.println("Step 6: Failed to save image to filesystem");
       }
@@ -88,10 +90,9 @@ void processBuffer(String buf) {
     Serial.println("'");
 
     if (userMessage.length() > 0) {
-      Message userMsg;
-      userMsg.role = "user";
-      userMsg.text = userMessage;
-      conversationHistory.push_back(userMsg);
+      Message userMsg = {"user", userMessage};
+      conversationHistory[(historyHead + historyCount) % MAX_HISTORY] = userMsg;
+      historyCount++;
 
       Serial.println("Step 3: Added message to conversation history");
       Serial.println("Step 4: Sending to Gemini...");

@@ -7,10 +7,94 @@
 #include "types.h"
 
 extern String url;
+extern std::array<Message, MAX_HISTORY> conversationHistory;
+extern int historyHead;
+extern int historyCount;
 String uploadedFileUri = ""; // Store the uploaded file URI
 String uploadedFileMimeType = ""; // Store the uploaded file MIME type
 
+const int MAX_WINDOW_SIZE = 10; // Sliding window size
+
+// Function to get MIME type from file extension
+String getMimeType(String filename) {
+  int dotIndex = filename.lastIndexOf('.');
+  if (dotIndex == -1) return "application/octet-stream";
+  String ext = filename.substring(dotIndex + 1);
+  ext.toLowerCase();
+  if (ext == "jpg" || ext == "jpeg") return "image/jpeg";
+  if (ext == "mp4") return "video/mp4";
+  if (ext == "mp3") return "audio/mpeg";
+  if (ext == "wav") return "audio/wav";
+  if (ext == "pdf") return "application/pdf";
+  // Add more as needed
+  return "application/octet-stream";
+}
+
+String summarizeConversation(const std::vector<Message>& discarded) {
+  String prompt = "Summarize the following conversation history in a concise way, focusing on key facts, decisions, and user requests. Preserve any URLs mentioned:\n";
+  for (const auto& msg : discarded) {
+    prompt += msg.role + ": " + msg.text + "\n";
+  }
+
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+  http.begin(client, url);
+  http.addHeader("Content-Type", "application/json");
+
+  JsonDocument doc;
+  JsonArray contents = doc["contents"].to<JsonArray>();
+  JsonObject contentObj = contents.add<JsonObject>();
+  contentObj["role"] = "user";
+  JsonArray parts = contentObj["parts"].to<JsonArray>();
+  JsonObject partObj = parts.add<JsonObject>();
+  partObj["text"] = prompt;
+
+  String httpRequestData;
+  serializeJson(doc, httpRequestData);
+  http.setTimeout(30000);
+
+  int httpResponseCode = http.POST(httpRequestData);
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    JsonDocument responseDoc;
+    DeserializationError error = deserializeJson(responseDoc, response);
+    if (!error && responseDoc["candidates"].is<JsonArray>()) {
+      String summary = responseDoc["candidates"][0]["content"]["parts"][0]["text"];
+      http.end();
+      return summary;
+    }
+  }
+  http.end();
+  return "Summary not available.";
+}
+
+void manageConversationHistory() {
+  if (historyCount <= MAX_WINDOW_SIZE) return;
+
+  std::vector<Message> discarded;
+  for (int i = 0; i < historyCount - MAX_WINDOW_SIZE; i++) {
+    discarded.push_back(conversationHistory[(historyHead + i) % MAX_HISTORY]);
+  }
+
+  String summary = summarizeConversation(discarded);
+
+  Message summaryMsg = {"system", "Summary of earlier conversation: " + summary};
+  conversationHistory[0] = summaryMsg;
+  int newCount = 1;
+
+  int startIdx = (historyHead + (historyCount - MAX_WINDOW_SIZE)) % MAX_HISTORY;
+  for (int i = 0; i < MAX_WINDOW_SIZE; i++) {
+    conversationHistory[newCount++] = conversationHistory[(startIdx + i) % MAX_HISTORY];
+  }
+
+  historyHead = 0;
+  historyCount = newCount;
+}
+
 void sendChatToGemini() {
+  // Manage history before sending aka summerizing if needed based on sliding window
+  manageConversationHistory();
 
   WiFiClientSecure client;
     client.setInsecure();
@@ -24,22 +108,22 @@ void sendChatToGemini() {
     JsonDocument doc;
     JsonArray contents = doc["contents"].to<JsonArray>();
 
-    for (const Message &msg : conversationHistory) {
+    for (int i = 0; i < historyCount; i++) {
       JsonObject contentObj = contents.add<JsonObject>();
-      contentObj["role"] = msg.role;
+      contentObj["role"] = conversationHistory[(historyHead + i) % MAX_HISTORY].role;
       JsonArray parts = contentObj["parts"].to<JsonArray>();
       JsonObject partObj = parts.add<JsonObject>();
-      partObj["text"] = msg.text;
+      partObj["text"] = conversationHistory[(historyHead + i) % MAX_HISTORY].text;
     }
 
-    // Add the uploaded image as a separate content if we have one
+    // Add the uploaded file as a separate content if we have one
     if (uploadedFileUri != "") {
       JsonObject contentObj = contents.add<JsonObject>();
       contentObj["role"] = "user";
       JsonArray parts = contentObj["parts"].to<JsonArray>();
       JsonObject filePart = parts.add<JsonObject>();
       JsonObject fileData = filePart["fileData"].to<JsonObject>();
-      fileData["mimeType"] = "image/jpeg";
+      fileData["mimeType"] = uploadedFileMimeType;
       fileData["fileUri"] = uploadedFileUri;
     }
 
@@ -73,20 +157,19 @@ void sendChatToGemini() {
         Serial.println(modelText);
 
          // Add model response to conversation history
-         Message modelMsg;
-         modelMsg.role = "model";
-         modelMsg.text = modelText;
-         conversationHistory.push_back(modelMsg);
+          Message modelMsg = {"model", modelText};
+          conversationHistory[(historyHead + historyCount) % MAX_HISTORY] = modelMsg;
+          historyCount++;
 
-         Serial.print("Conversation history now has ");
-         Serial.print(conversationHistory.size());
-         Serial.println(" messages.\n");
+          Serial.print("Conversation history now has ");
+          Serial.print(historyCount);
+          Serial.println(" messages.\n");
 
-         // Save the query and response to filesystem
-         if (conversationHistory.size() >= 2) {
-           String userQuery = conversationHistory[conversationHistory.size() - 2].text;
-           save_history(modelText, userQuery);
-         }
+          // Save the query and response to filesystem
+          if (historyCount >= 2) {
+            String userQuery = conversationHistory[(historyHead + historyCount - 2) % MAX_HISTORY].text;
+            save_history(modelText, userQuery);
+          }
       } else {
         Serial.println("Error parsing Gemini response");
         Serial.println(response);
@@ -100,7 +183,9 @@ void sendChatToGemini() {
     http.end();
 }
 
-bool uploadFileToGemini(uint8_t* fileData, size_t fileSize, String mimeType, String displayName) {
+bool uploadFileToGemini(uint8_t* fileData, size_t fileSize, String filename) {
+  String mimeType = getMimeType(filename);
+  String displayName = filename; // Use filename as display name
 
   WiFiClientSecure client;
   client.setInsecure();
@@ -199,6 +284,6 @@ bool uploadFileToGemini(uint8_t* fileData, size_t fileSize, String mimeType, Str
 
   uploadedFileUri = fileUri;
   uploadedFileMimeType = mimeType;
-  Serial.println("File uploaded successfully. URI: " + uploadedFileUri);
+  Serial.println("File uploaded successfully. URI: " + uploadedFileUri + ", MIME: " + mimeType);
   return true;
 }
