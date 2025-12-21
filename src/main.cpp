@@ -1,11 +1,3 @@
-// pio device monitor --eol=CRLF --echo --filter send_on_enter
-#include <Arduino.h>
-#include <ArduinoJson.h>
-#include <HTTPClient.h> // The Library
-#include <LittleFS.h>
-#include <WiFi.h>
-#include <WiFiClientSecure.h>
-#include <WiFiManager.h>
 #include "camera.h"
 #include "config.h"
 #include "esp_camera.h"
@@ -14,6 +6,13 @@
 #include "serial.h"
 #include "types.h"
 #include "webserver.h"
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <HTTPClient.h> // The Library
+#include <LittleFS.h>
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <WiFiManager.h>
 
 #define LED_PIN 2
 // Camera model selection - now defined in platformio.ini build_flags
@@ -25,9 +24,12 @@ int historyCount = 0;
 String url;
 
 WiFiManager wm;
-WiFiManagerParameter apiKeyParam("api_key", "Gemini API Key", GEMINI_API_KEY.c_str(), 100);
-WiFiManagerParameter modelParam("model", "Gemini Model", GEMINI_MODEL.c_str(), 50);
-WiFiManagerParameter urlParam("time_url", "Time API URL", TIME_API_URL.c_str(), 100);
+WiFiManagerParameter apiKeyParam("api_key", "Gemini API Key",
+                                 GEMINI_API_KEY.c_str(), 100);
+WiFiManagerParameter modelParam("model", "Gemini Model", GEMINI_MODEL.c_str(),
+                                50);
+WiFiManagerParameter urlParam("time_url", "Time API URL", TIME_API_URL.c_str(),
+                              100);
 
 void saveConfigCallback() {
   Serial.println("Saving config to LittleFS");

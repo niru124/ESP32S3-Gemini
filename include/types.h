@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 #include <array>
-#include <map>
 
 // Structure to hold conversation messages
 struct Message {
@@ -11,8 +10,14 @@ struct Message {
   String text;
 };
 
-// MIME types map for file extensions
-extern std::map<String, String> mimeTypes;
+// MIME type structure
+struct MimeType {
+  String ext;
+  String type;
+};
+
+// MIME types array for file extensions
+extern std::array<MimeType, 6> mimeTypes;
 
 // Global conversation history - circular buffer
 const int MAX_HISTORY = 20;

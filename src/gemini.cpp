@@ -15,18 +15,27 @@ String uploadedFileMimeType = ""; // Store the uploaded file MIME type
 
 const int MAX_WINDOW_SIZE = 10; // Sliding window size
 
+// Define and initialize MIME types array
+std::array<MimeType, 6> mimeTypes = {{
+  {"jpg", "image/jpeg"},
+  {"jpeg", "image/jpeg"},
+  {"mp4", "video/mp4"},
+  {"mp3", "audio/mpeg"},
+  {"wav", "audio/wav"},
+  {"pdf", "application/pdf"}
+}};
+
 // Function to get MIME type from file extension
 String getMimeType(String filename) {
   int dotIndex = filename.lastIndexOf('.');
   if (dotIndex == -1) return "application/octet-stream";
   String ext = filename.substring(dotIndex + 1);
   ext.toLowerCase();
-  if (ext == "jpg" || ext == "jpeg") return "image/jpeg";
-  if (ext == "mp4") return "video/mp4";
-  if (ext == "mp3") return "audio/mpeg";
-  if (ext == "wav") return "audio/wav";
-  if (ext == "pdf") return "application/pdf";
-  // Add more as needed
+
+  // Lookup in MIME types array
+  for (const auto& mt : mimeTypes) {
+    if (mt.ext == ext) return mt.type;
+  }
   return "application/octet-stream";
 }
 

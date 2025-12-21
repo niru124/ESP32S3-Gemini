@@ -6,3 +6,4 @@ src/configi.md
 .cache
 todo.md
 compile_commands.json
+logs/
