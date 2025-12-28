@@ -18,11 +18,10 @@ const int MAX_WINDOW_SIZE = 10; // Sliding window size
 // Define and initialize MIME types array
 std::array<MimeType, 6> mimeTypes = {{
   {"jpg", "image/jpeg"},
-  {"jpeg", "image/jpeg"},
+  // {"jpeg", "image/jpeg"},
   {"mp4", "video/mp4"},
   {"mp3", "audio/mpeg"},
-  {"wav", "audio/wav"},
-  {"pdf", "application/pdf"}
+  {"wav", "audio/wav"}
 }};
 
 // Function to get MIME type from file extension
@@ -79,26 +78,27 @@ String summarizeConversation(const std::vector<Message>& discarded) {
 }
 
 void manageConversationHistory() {
-  if (historyCount <= MAX_WINDOW_SIZE) return;
+  if (historyCount < MAX_WINDOW_SIZE) return;  // Trigger at 10 or more
+
+  // Summarize all but the most recent 1 message
+  int numToKeepRecent = 1;  // Keep 1 most recent message
+  int numToSummarize = historyCount - numToKeepRecent;
 
   std::vector<Message> discarded;
-  for (int i = 0; i < historyCount - MAX_WINDOW_SIZE; i++) {
+  for (int i = 0; i < numToSummarize; i++) {
     discarded.push_back(conversationHistory[(historyHead + i) % MAX_HISTORY]);
   }
 
   String summary = summarizeConversation(discarded);
-
   Message summaryMsg = {"system", "Summary of earlier conversation: " + summary};
   conversationHistory[0] = summaryMsg;
-  int newCount = 1;
 
-  int startIdx = (historyHead + (historyCount - MAX_WINDOW_SIZE)) % MAX_HISTORY;
-  for (int i = 0; i < MAX_WINDOW_SIZE; i++) {
-    conversationHistory[newCount++] = conversationHistory[(startIdx + i) % MAX_HISTORY];
-  }
+  // Keep the most recent 1 message
+  int recentIdx = (historyHead + numToSummarize) % MAX_HISTORY;
+  conversationHistory[1] = conversationHistory[recentIdx];
 
   historyHead = 0;
-  historyCount = newCount;
+  historyCount = 2;  // Summary + 1 recent
 }
 
 void sendChatToGemini() {
@@ -197,7 +197,7 @@ bool uploadFileToGemini(uint8_t* fileData, size_t fileSize, String filename) {
   String displayName = filename; // Use filename as display name
 
   WiFiClientSecure client;
-  client.setInsecure();
+  client.setInsecure();  // allows connection without ssl certificate
   HTTPClient http;
 
   String baseUrl = "https://generativelanguage.googleapis.com";
