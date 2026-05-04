@@ -1,3 +1,11 @@
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <HTTPClient.h>  // The Library
+#include <LittleFS.h>
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <WiFiManager.h>
+
 #include "camera.h"
 #include "config.h"
 #include "esp_camera.h"
@@ -6,13 +14,6 @@
 #include "serial.h"
 #include "types.h"
 #include "webserver.h"
-#include <Arduino.h>
-#include <ArduinoJson.h>
-#include <HTTPClient.h> // The Library
-#include <LittleFS.h>
-#include <WiFi.h>
-#include <WiFiClientSecure.h>
-#include <WiFiManager.h>
 
 #define LED_PIN 2
 // Camera model selection - now defined in platformio.ini build_flags
@@ -118,10 +119,10 @@ void setup() {
   // Check for chat messages via serial
   checkSerialChat();
 
-  delay(100); // Small delay to prevent busy looping
+  delay(100);  // Small delay to prevent busy looping
 }
 
 void loop() {
   checkSerialChat();
-  delay(100); // Small delay to prevent busy looping
+  delay(100);  // Small delay to prevent busy looping
 }

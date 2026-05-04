@@ -93,10 +93,11 @@ void manageConversationHistory() {
   Message summaryMsg = {"system", "Summary of earlier conversation: " + summary};
   conversationHistory[0] = summaryMsg;
 
-  // Keep the most recent 1 message
-  int recentIdx = (historyHead + numToSummarize) % MAX_HISTORY;
-  conversationHistory[1] = conversationHistory[recentIdx];
-
+  // A for loop here say there are more than one message if somehow slipped use loop to put it 
+  for(int i = 0; i < numToKeepRecent; i++) {
+    int recentIdx = (historyHead + numToSummarize + 1 + i) % MAX_HISTORY;
+    conversationHistory[1 + i] = conversationHistory[recentIdx];
+  }
   historyHead = 0;
   historyCount = 2;  // Summary + 1 recent
 }

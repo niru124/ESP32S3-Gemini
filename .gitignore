@@ -1,4 +1,4 @@
-.pio
+*.pio/
 .clang_complete
 .gcc-flags.json
 .ccls
@@ -6,4 +6,4 @@ src/configi.md
 .cache
 todo.md
 compile_commands.json
-logs/
+*logs/

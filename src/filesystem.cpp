@@ -1,10 +1,12 @@
 #include "filesystem.h"
-#include "config.h"
+
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <LittleFS.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+
+#include "config.h"
 
 // Extern declarations for global variables
 extern String TIME_API_URL;
@@ -30,20 +32,21 @@ String getFileName() {
     DeserializationError error = deserializeJson(doc, raw_data);
     if (error) {
       Serial.println("Failed to parse time JSON");
-      return "chat_log.md"; // Fallback
+      return "chat_log.md";  // Fallback
     }
     String datetime = doc["datetime"];
     // Parse "2025-12-16T01:43:47.179537+05:30"
     int tIndex = datetime.indexOf('T');
-    String date = datetime.substring(0, tIndex);      // "2025-12-16"
-    String timeFull = datetime.substring(tIndex + 1); // "01:43:47.179537+05:30"
-    String time = timeFull.substring(0, 5);           // "01:43"
+    String date = datetime.substring(0, tIndex);  // "2025-12-16"
+    String timeFull =
+        datetime.substring(tIndex + 1);      // "01:43:47.179537+05:30"
+    String time = timeFull.substring(0, 5);  // "01:43"
     String filename = date + "_" + time + ".md";
-    filename.replace(":", "-"); // Replace : with - for filename safety
+    filename.replace(":", "-");  // Replace : with - for filename safety
     return filename;
   } else {
     Serial.println("Failed to get time from API after retries");
-    return "chat_log.md"; // Fallback
+    return "chat_log.md";  // Fallback
   }
 }
 
@@ -72,7 +75,7 @@ void save_history(String res, String user) {
   }
 }
 
-void deleteFile(const char *filename) {
+void deleteFile(const char* filename) {
   if (!LittleFS.begin(true)) {
     Serial.println("LittleFS Mount Failed");
     return;

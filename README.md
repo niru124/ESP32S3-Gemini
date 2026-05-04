@@ -34,7 +34,7 @@ ESP_GEM is an ESP32-S3-based AI camera project that captures images, analyzes th
 1. **Clone the Repository:**
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/niru124/ESP32S3-Gemini.git
    cd ESP_GEM
    ```
 
